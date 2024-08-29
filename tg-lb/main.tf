@@ -145,61 +145,28 @@ resource "aws_security_group" "allow_tls" {
     Name = "SG"
   }
 
-  ingress {
-    description      = "Allow HTTP from anywhere"
-    from_port        = 80
-    to_port          = 80
-    protocol         = "tcp"
-    cidr_blocks      = [var.cidr]
-  }
-
-  ingress {
-    description      = "Allow SSH from anywhere"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = [var.cidr]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [var.cidr]
-  }
+ ingress {
+  description      = "Allow HTTP from anywhere"
+  from_port        = 80
+  to_port          = 80
+  protocol         = "tcp"
+  cidr_blocks      = [var.cidr]
 }
-#----------------------SG for ec2-----------------
-resource "aws_security_group" "allow_tls1" {
-  name        = "allow_tls"
-  description = "Allow HTTP and SSH inbound traffic and all outbound traffic"
-  vpc_id      = aws_vpc.name1.id
 
-  tags = {
-    Name = "SG"
-  }
+ingress {
+  description      = "Allow SSH from anywhere"
+  from_port        = 22
+  to_port          = 22
+  protocol         = "tcp"
+  cidr_blocks      = [var.cidr]
+}
 
-  ingress {
-    description      = "Allow HTTP from anywhere"
-    from_port        = 80
-    to_port          = 80
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]  # Allow HTTP traffic from anywhere
-  }
-
-  ingress {
-    description      = "Allow SSH from anywhere"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]  # Allow SSH traffic from anywhere
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]  # Allow all outbound traffic
-  }
+egress {
+  from_port   = 0
+  to_port     = 0
+  protocol    = "-1"
+  cidr_blocks = [var.cidr]
+}
 }
 #-------------LB------------
 resource "aws_lb" "app_lb" {
@@ -221,14 +188,14 @@ resource "aws_lb_target_group" "app_tg" {
   vpc_id   = aws_vpc.name1.id
 
   health_check {
-    path                = "/"
-    protocol            = "HTTP"
-    matcher             = "200"
-    interval            = 60  # Increase interval
-    timeout             = 10  # Increase timeout
-    healthy_threshold   = 5   # Require more healthy responses
-    unhealthy_threshold = 5   # Require more unhealthy responses before marking as unhealthy
-  }
+  path                = "/"
+  protocol            = "HTTP"
+  matcher             = "200"
+  interval            = 60  # Ensure the application is ready before the first check
+  timeout             = 10  # Increase timeout if necessary
+  healthy_threshold   = 5
+  unhealthy_threshold = 5
+}
 
   tags = {
     Name = "app-tg"
@@ -259,9 +226,8 @@ resource "aws_instance" "web1" {
   key_name               = var.key_name
   subnet_id              = aws_subnet.main.id
   associate_public_ip_address = true
-  security_groups        = [aws_security_group.allow_tls.id]  # Use ID here
+security_groups        = [aws_security_group.allow_tls.id]  # Use ID here
   tags = {
     Name = "first"
   }
 }
-
