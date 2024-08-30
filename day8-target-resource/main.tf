@@ -14,3 +14,6 @@ resource "aws_s3_bucket" "web" {
     Name = "My bucket"
   }
 }
+#If we want to create or destroy specific resource in terraform configuration file we can use target resource block examplebelow
+#terraform apply --target=aws_s3_bucket.dependent
+#terraform destroy --target=aws_s3_bucket.dependent
